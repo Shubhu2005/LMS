@@ -41,4 +41,20 @@ export class UsersService {
   async findAll(): Promise<Partial<UserDocument>[]> {
     return this.userModel.find().select('-password').lean();
   }
+
+  
+  async updateRefreshToken(
+  userId: string,
+  refreshToken: string | null,
+): Promise<void> {
+  const user = await this.userModel.findById(userId);
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  user.refreshToken = refreshToken ?? undefined;
+  await user.save();
+}
+
 }

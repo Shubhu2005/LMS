@@ -5,6 +5,7 @@ import {
   Get,
   Body,
   UseGuards,
+  UnauthorizedException,
   Request,
   HttpCode,
   HttpStatus,
@@ -17,6 +18,7 @@ import { RolesGuard } from '../admin/guards/roles.guard';
 import { Roles } from '../admin/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { UsersService } from '../users/users.service';
+import * as bcrypt from 'bcryptjs';
 
 @Controller('auth')
 export class AuthController {
@@ -130,4 +132,25 @@ export class AuthController {
   getAllUsers() {
     return this.usersService.findAll();
   }
+
+
+
+
+  /*  * post /auth/refresh
+   * Refresh access token using refresh token
+   * Client should send refresh token in Authorization header*/
+   @Post('refresh')
+  async refresh(@Body('refreshToken') token: string) {
+    return this.authService.refreshToken(token);
+  }
+
+
+
+/*logout */
+@Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Request() req) {
+    return this.authService.logout(req.user.sub);
+  }
+
 }

@@ -6,7 +6,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ValidationPipe } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-
+import { BooksModule } from './books/books.module';
+import { BorrowModule } from './borrow/borrow.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -17,6 +18,8 @@ import { UsersModule } from './users/users.module';
 
     AuthModule,
     UsersModule,
+    BooksModule,
+    BorrowModule,
   ],
   providers: [
     {

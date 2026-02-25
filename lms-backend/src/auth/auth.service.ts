@@ -1,3 +1,4 @@
+
 // src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -46,6 +47,63 @@ export class AuthService {
     };
   }
 
+  //-------------generate token-------//
+  async generateTokens(user: any) {
+  const payload = {
+    sub: user._id,
+    role: user.role,
+    firstName: user.firstName,
+  };
+
+  const accessToken = this.jwtService.sign(payload, {
+    secret: process.env.JWT_ACCESS_SECRET,
+    expiresIn: '15m',
+  });
+
+  const refreshToken = this.jwtService.sign(payload, {
+    secret: process.env.JWT_REFRESH_SECRET,
+    expiresIn: '7d',
+  });
+
+  const hashedRefresh = await bcrypt.hash(refreshToken, 12);
+
+  await this.usersService.updateRefreshToken(user._id, hashedRefresh);
+
+  return { accessToken, refreshToken };
+}
+
+
+//-------------Refersh token----//
+async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+
+      const user = await this.usersService.findById(payload.sub);
+
+      if (!user || !user.refreshToken) {
+        throw new UnauthorizedException();
+      }
+
+      const isMatch = await bcrypt.compare(
+        refreshToken,
+        user.refreshToken,
+      );
+
+      if (!isMatch) {
+        throw new UnauthorizedException();
+      }
+
+      return this.generateTokens(user);
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  
+  
+
   // ── Login ─────────────────────────────────────────────────────────────
   async login(dto: LoginDto) {
     // 1. Find user by email
@@ -89,4 +147,12 @@ export class AuthService {
   ): string {
     return this.jwtService.sign({ sub: id, email, role, firstName });
   }
+
+  //----logout-----//
+
+    async logout(userId: string) {
+    await this.usersService.updateRefreshToken(userId, null);
+    return { message: 'Logged out successfully' };
+  }
+
 }
