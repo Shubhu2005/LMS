@@ -42,7 +42,7 @@ export class UsersService {
     return this.userModel.find().select('-password').lean();
   }
 
-  
+
   async updateRefreshToken(
   userId: string,
   refreshToken: string | null,
@@ -55,6 +55,26 @@ export class UsersService {
 
   user.refreshToken = refreshToken ?? undefined;
   await user.save();
+}
+
+async updateRole(userId: string, role: Role) {
+  return this.userModel.findByIdAndUpdate(
+    userId,
+    { role },
+    { new: true },
+  );
+}
+
+async deleteUser(userId: string) {
+  const user = await this.userModel.findByIdAndDelete(userId);
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return {
+    message: 'User deleted successfully',
+  };
 }
 
 }
