@@ -1,7 +1,7 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';  // ← add this
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ValidationPipe } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
@@ -12,8 +12,13 @@ import { BorrowModule } from './borrow/borrow.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
 
-    MongooseModule.forRoot(process.env.MONGO_URI, {
-      autoIndex: true,
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGO_URI'),
+        autoIndex: true,
+      }),
     }),
 
     AuthModule,

@@ -1,21 +1,9 @@
 // src/main.ts
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { Reflector } from '@nestjs/core';
-import { RolesGuard } from './admin/guards/roles.guard';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const reflector = app.get(Reflector);
-app.useGlobalGuards(new RolesGuard(reflector));
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
+  
   app.enableCors();
 
   const port = process.env.PORT || 3000;

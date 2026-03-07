@@ -150,7 +150,7 @@ export class AuthController {
 @Post('logout')
   @UseGuards(JwtAuthGuard)
   async logout(@Request() req) {
-    return this.authService.logout(req.user.sub);
+    return this.authService.logout(req.user.id);
   }
 
 }

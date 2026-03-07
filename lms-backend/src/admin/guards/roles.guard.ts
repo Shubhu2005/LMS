@@ -1,9 +1,10 @@
-// src/common/guards/roles.guard.ts
+// src/admin/guards/roles.guard.ts
 import {
   Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '../../common/enums/role.enum';
@@ -14,22 +15,30 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // Get the roles required for this route
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    // If no roles are specified, allow access
     if (!requiredRoles) {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
 
-    if (!user || !requiredRoles.includes(user.role)) {
+    // If JwtAuthGuard is missing or failed to populate req.user,
+    // we should let JwtAuthGuard handle the 401.
+    // However, if we are here and user is missing, it's an auth failure.
+    if (!user) {
+      throw new UnauthorizedException('Authentication required for this resource');
+    }
+
+    const hasRole = requiredRoles.includes(user.role);
+
+    if (!hasRole) {
       throw new ForbiddenException(
-        `Access denied. Required role(s): ${requiredRoles.join(', ')}`,
+        `Access denied. Your role: ${user.role}. Required role(s): ${requiredRoles.join(', ')}`,
       );
     }
 

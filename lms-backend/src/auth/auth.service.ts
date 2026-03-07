@@ -1,4 +1,3 @@
-
 // src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -7,12 +6,14 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role } from '../common/enums/role.enum';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   // ── Register ──────────────────────────────────────────────────────────
@@ -27,12 +28,7 @@ export class AuthService {
       role: dto.role,
     });
 
-    const token = this.signToken(
-      (user._id as any).toString(),
-      user.email,
-      user.role,
-      user.firstName,
-    );
+    const tokens = await this.generateTokens(user);
 
     return {
       message: 'Registration successful',
@@ -43,41 +39,43 @@ export class AuthService {
         role: user.role,
         createdAt: (user as any).createdAt,
       },
-      access_token: token,
+      ...tokens,
     };
   }
 
   //-------------generate token-------//
   async generateTokens(user: any) {
-  const payload = {
-    sub: user._id,
-    role: user.role,
-    firstName: user.firstName,
-  };
+    const payload = {
+      sub: user._id,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+    };
 
-  const accessToken = this.jwtService.sign(payload, {
-    secret: process.env.JWT_ACCESS_SECRET,
-    expiresIn: '15m',
-  });
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '1h',
+    });
 
-  const refreshToken = this.jwtService.sign(payload, {
-    secret: process.env.JWT_REFRESH_SECRET,
-    expiresIn: '7d',
-  });
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '7d',
+    });
 
-  const hashedRefresh = await bcrypt.hash(refreshToken, 12);
+    const hashedRefresh = await bcrypt.hash(refreshToken, 12);
 
-  await this.usersService.updateRefreshToken(user._id, hashedRefresh);
+    await this.usersService.updateRefreshToken(user._id, hashedRefresh);
 
-  return { accessToken, refreshToken };
-}
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+  }
 
-
-//-------------Refersh token----//
-async refreshToken(refreshToken: string) {
+  //-------------Refresh token----//
+  async refreshToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET,
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
       const user = await this.usersService.findById(payload.sub);
@@ -86,10 +84,7 @@ async refreshToken(refreshToken: string) {
         throw new UnauthorizedException();
       }
 
-      const isMatch = await bcrypt.compare(
-        refreshToken,
-        user.refreshToken,
-      );
+      const isMatch = await bcrypt.compare(refreshToken, user.refreshToken);
 
       if (!isMatch) {
         throw new UnauthorizedException();
@@ -100,9 +95,6 @@ async refreshToken(refreshToken: string) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
-
-  
-  
 
   // ── Login ─────────────────────────────────────────────────────────────
   async login(dto: LoginDto) {
@@ -118,13 +110,7 @@ async refreshToken(refreshToken: string) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // 3. Sign & return JWT
-    const token = this.signToken(
-      (user._id as any).toString(),
-      user.email,
-      user.role,
-      user.firstName,
-    );
+    const tokens = await this.generateTokens(user);
 
     return {
       message: 'Login successful',
@@ -134,25 +120,13 @@ async refreshToken(refreshToken: string) {
         email: user.email,
         role: user.role,
       },
-      access_token: token,
+      ...tokens,
     };
   }
 
-  // ── JWT helper ────────────────────────────────────────────────────────
-  private signToken(
-    id: string,
-    email: string,
-    role: Role,
-    firstName: string,
-  ): string {
-    return this.jwtService.sign({ sub: id, email, role, firstName });
-  }
-
   //----logout-----//
-
-    async logout(userId: string) {
+  async logout(userId: string) {
     await this.usersService.updateRefreshToken(userId, null);
     return { message: 'Logged out successfully' };
   }
-
 }
