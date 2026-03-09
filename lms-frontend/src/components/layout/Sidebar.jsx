@@ -23,11 +23,12 @@ export default function Sidebar() {
   const navItems = isAdminOrManager 
     ? [
         { label: "Dashboard", icon: <DashboardIcon />, path: "/admin/dashboard" },
-        { label: "Books",     icon: <MenuBookIcon />,  path: "/admin/books" },
+        { label: "Browse Books", icon: <MenuBookIcon />,  path: "/books" },
         { label: "Borrows",   icon: <SwapHorizIcon />, path: "/admin/borrows" },
       ]
     : [
-        { label: "Dashboard", icon: <DashboardIcon />, path: "/student/dashboard" },
+        { label: "My Dashboard", icon: <DashboardIcon />, path: "/student/dashboard" },
+        { label: "Browse Books", icon: <MenuBookIcon />,  path: "/books" },
       ];
 
   const handleLogout = () => {

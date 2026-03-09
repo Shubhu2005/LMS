@@ -5,17 +5,18 @@ import {
   TextField, MenuItem, Select, FormControl, InputLabel,
   Dialog, DialogTitle, DialogContent, DialogActions,
   Rating, IconButton, Chip, Pagination, CircularProgress,
-  InputAdornment, Tooltip,
+  InputAdornment,
 } from "@mui/material";
 import AddIcon        from "@mui/icons-material/Add";
 import DeleteIcon     from "@mui/icons-material/Delete";
 import SearchIcon     from "@mui/icons-material/Search";
 import BookIcon       from "@mui/icons-material/Book";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   fetchBooks, addBook, deleteBook,
   updateBookRating, setGenre, setSearch, setPage,
 } from "../../features/books/booksSlice";
-import { requestBook } from "../../features/borrow/borrowSlice";
+import { requestBook, fetchMyBorrows } from "../../features/borrow/borrowSlice";
 
 const GENRES = ["All", "Fiction", "Tech", "Sci-Fi", "Biography", "Classic", "Dystopian", "Fantasy", "Education", "Thriller", "Self-Help"];
 
@@ -31,6 +32,7 @@ const GENRE_COLORS = {
 export default function BooksPage() {
   const dispatch = useDispatch();
   const { books, loading, totalPages, currentPage, genre, search } = useSelector((s) => s.books);
+  const { borrows } = useSelector((s) => s.borrow);
   const { user } = useSelector((s) => s.auth);
 
   const isAdmin   = user?.role === "Admin";
@@ -43,7 +45,10 @@ export default function BooksPage() {
 
   useEffect(() => {
     dispatch(fetchBooks({ genre, search, page: currentPage, limit: 6 }));
-  }, [dispatch, genre, search, currentPage]);
+    if (isStudent) {
+      dispatch(fetchMyBorrows());
+    }
+  }, [dispatch, genre, search, currentPage, isStudent]);
 
   useEffect(() => {
     const timer = setTimeout(() => dispatch(setSearch(searchInput)), 500);
@@ -68,7 +73,15 @@ export default function BooksPage() {
   };
 
   const handleBorrow = (bookId) => {
-    dispatch(requestBook(bookId));
+    dispatch(requestBook(bookId)).then(() => {
+        dispatch(fetchMyBorrows()); // Refresh borrow list to update button state
+    });
+  };
+
+  // Helper to check if book is already requested/issued to this student
+  const getBorrowStatus = (bookId) => {
+    const b = borrows.find(b => b.book?._id === bookId && (b.status === "requested" || b.status === "issued"));
+    return b ? b.status : null;
   };
 
   return (
@@ -114,81 +127,86 @@ export default function BooksPage() {
         <Box display="flex" justifyContent="center" mt={8}>
           <CircularProgress sx={{ color: "#6366f1" }} />
         </Box>
-      ) : books.length === 0 ? (
-        <Box textAlign="center" mt={8}>
-          <Typography color="text.secondary">No books found.</Typography>
-        </Box>
       ) : (
         <Grid container spacing={2.5}>
-          {books.map((book) => (
-            <Grid item xs={12} sm={6} md={4} key={book._id}>
-              <Card
-                elevation={0}
-                sx={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 3,
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.08)" },
-                }}
-              >
-                <CardContent sx={{ p: 3, flexGrow: 1 }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                    <Chip
-                      label={book.genre}
-                      size="small"
-                      sx={{
-                        backgroundColor: GENRE_COLORS[book.genre]?.bg || "#f3f4f6",
-                        color: GENRE_COLORS[book.genre]?.color || "#374151",
-                        fontWeight: 600,
-                        fontSize: 11,
-                      }}
-                    />
-                    {isAdmin && (
-                      <IconButton size="small" onClick={() => handleDelete(book._id)} sx={{ color: "#ef4444", "&:hover": { backgroundColor: "#fef2f2" } }}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </Box>
+          {books.map((book) => {
+            const status = getBorrowStatus(book._id);
+            return (
+              <Grid item xs={12} sm={6} md={4} key={book._id}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 3,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    transition: "box-shadow 0.2s",
+                    "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.08)" },
+                  }}
+                >
+                  <CardContent sx={{ p: 3, flexGrow: 1 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
+                      <Chip
+                        label={book.genre}
+                        size="small"
+                        sx={{
+                          backgroundColor: GENRE_COLORS[book.genre]?.bg || "#f3f4f6",
+                          color: GENRE_COLORS[book.genre]?.color || "#374151",
+                          fontWeight: 600,
+                          fontSize: 11,
+                        }}
+                      />
+                      {isAdmin && (
+                        <IconButton size="small" onClick={() => handleDelete(book._id)} sx={{ color: "#ef4444", "&:hover": { backgroundColor: "#fef2f2" } }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </Box>
 
-                  <Typography variant="h6" fontWeight={700} fontSize={15} color="#111827" mb={0.5} noWrap>
-                    {book.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    by {book.author}
-                  </Typography>
-
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <Rating
-                      value={book.rating}
-                      onChange={(_, val) => isManager && handleRating(book._id, val)}
-                      readOnly={!isManager}
-                      size="small"
-                      sx={{ color: "#f59e0b" }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      ({book.rating}/5)
+                    <Typography variant="h6" fontWeight={700} fontSize={15} color="#111827" mb={0.5} noWrap>
+                      {book.title}
                     </Typography>
-                  </Box>
+                    <Typography variant="body2" color="text.secondary" mb={2}>
+                      by {book.author}
+                    </Typography>
 
-                  {isStudent && (
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<BookIcon />}
-                      disabled={!book.isAvailable}
-                      onClick={() => handleBorrow(book._id)}
-                      sx={{ mt: "auto", borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-                    >
-                      {book.isAvailable ? "Request Borrow" : "Not Available"}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <Rating
+                        value={book.rating}
+                        onChange={(_, val) => isManager && handleRating(book._id, val)}
+                        readOnly={!isManager}
+                        size="small"
+                        sx={{ color: "#f59e0b" }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        ({book.rating}/5)
+                      </Typography>
+                    </Box>
+
+                    {isStudent && (
+                      <Button
+                        fullWidth
+                        variant={status ? "contained" : "outlined"}
+                        startIcon={status ? <CheckCircleIcon /> : <BookIcon />}
+                        disabled={!!status || !book.isAvailable}
+                        onClick={() => handleBorrow(book._id)}
+                        sx={{ 
+                            mt: "auto", borderRadius: 2, textTransform: "none", fontWeight: 600,
+                            ...(status === "requested" && { bgcolor: "#fef3c7 !important", color: "#92400e !important" }),
+                            ...(status === "issued" && { bgcolor: "#dcfce7 !important", color: "#166534 !important" }),
+                        }}
+                      >
+                        {status === "requested" ? "Requested" : 
+                         status === "issued" ? "Borrowed" : 
+                         book.isAvailable ? "Request Borrow" : "Not Available"}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
 

@@ -11,7 +11,7 @@ function PublicRoute({ children }) {
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   if (!isAuthenticated) return children;
 
-  if (user?.role === "Admin" || user?.role === "Manager") return <Navigate to="/admin/books" replace />;
+  if (user?.role === "Admin" || user?.role === "Manager") return <Navigate to="/books" replace />;
   if (user?.role === "Student") return <Navigate to="/student/dashboard" replace />;    
   return <Navigate to="/login" replace />;
 }
@@ -35,8 +35,9 @@ export default function AppRouter() {
         <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />   
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-        <Route path="/admin/books" element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+        {/* Books is accessible by EVERYONE (Student, Manager, Admin) */}
+        <Route path="/books" element={
+          <ProtectedRoute allowedRoles={["Admin", "Manager", "Student"]}>
             <MainLayout><BooksPage /></MainLayout>
           </ProtectedRoute>
         } />
@@ -62,7 +63,7 @@ export default function AppRouter() {
         } />
 
         <Route path="/"      element={<Navigate to="/login" replace />} />
-        <Route path="/admin" element={<Navigate to="/admin/books" replace />} />        
+        <Route path="/admin" element={<Navigate to="/books" replace />} />        
 
         <Route path="/unauthorized" element={
           <div style={{ padding: 40, textAlign: "center" }}>
