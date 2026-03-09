@@ -3,7 +3,7 @@ import { Formik } from "formik";
 import * as Yup from "yup";
 import { Box, Button, TextField, Typography, Paper, useMediaQuery } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { loginUser, clearError } from "../../features/auth/authSlice";
 
 const validationSchema = Yup.object({
@@ -13,13 +13,10 @@ const validationSchema = Yup.object({
 
 export default function LoginPage() {
   const dispatch   = useDispatch();
-  const navigate   = useNavigate();
-  const isNonMobile = useMediaQuery("(min-width:600px)");
-  const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
+    const isNonMobile = useMediaQuery("(min-width:600px)");
+  const { loading, error } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    if (isAuthenticated) navigate("/dashboard", { replace: true });
-  }, [isAuthenticated, navigate]);
+
 
   useEffect(() => () => dispatch(clearError()), [dispatch]);
 
@@ -115,3 +112,4 @@ export default function LoginPage() {
     </Box>
   );
 }
+

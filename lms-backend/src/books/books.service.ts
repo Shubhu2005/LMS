@@ -2,17 +2,37 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Book, BookDocument } from './book.schema';
 import { Model } from 'mongoose';
 
 @Injectable()
-export class BooksService {
+export class BooksService implements OnModuleInit {
   constructor(
     @InjectModel(Book.name)
     private readonly bookModel: Model<BookDocument>,
   ) {}
+
+  async onModuleInit() {
+    const count = await this.bookModel.countDocuments();
+    if (count === 0) {
+      console.log('Seeding sample books...');
+      const samples = [
+        { title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', genre: 'Classic', rating: 4.5, isAvailable: true },
+        { title: 'To Kill a Mockingbird', author: 'Harper Lee', genre: 'Classic', rating: 4.8, isAvailable: true },
+        { title: '1984', author: 'George Orwell', genre: 'Dystopian', rating: 4.7, isAvailable: true },
+        { title: 'The Hobbit', author: 'J.R.R. Tolkien', genre: 'Fantasy', rating: 4.9, isAvailable: true },
+        { title: 'Clean Code', author: 'Robert C. Martin', genre: 'Education', rating: 4.8, isAvailable: true },
+        { title: 'The Silent Patient', author: 'Alex Michaelides', genre: 'Thriller', rating: 4.3, isAvailable: true },
+        { title: 'Atomic Habits', author: 'James Clear', genre: 'Self-Help', rating: 4.9, isAvailable: true },
+        { title: 'Educated', author: 'Tara Westover', genre: 'Biography', rating: 4.7, isAvailable: true },
+      ];
+      await this.bookModel.insertMany(samples);
+      console.log('Sample books seeded!');
+    }
+  }
 
   // 🔥 1. CREATE BOOK
   async create(dto: any) {

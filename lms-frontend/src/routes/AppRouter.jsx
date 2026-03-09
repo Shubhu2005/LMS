@@ -3,6 +3,8 @@ import { useSelector } from "react-redux";
 import LoginPage    from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import BooksPage    from "../pages/admin/BooksPage";
+import BorrowManagement from "../pages/admin/BorrowManagement";
+import StudentDashboard from "../pages/student/StudentDashboard";
 import MainLayout   from "../components/layout/MainLayout";
 
 function PublicRoute({ children }) {
@@ -10,7 +12,7 @@ function PublicRoute({ children }) {
   if (!isAuthenticated) return children;
 
   if (user?.role === "Admin" || user?.role === "Manager") return <Navigate to="/admin/books" replace />;
-  if (user?.role === "Student") return <Navigate to="/student/dashboard" replace />;
+  if (user?.role === "Student") return <Navigate to="/student/dashboard" replace />;    
   return <Navigate to="/login" replace />;
 }
 
@@ -30,7 +32,7 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />   
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
         <Route path="/admin/books" element={
@@ -39,25 +41,37 @@ export default function AppRouter() {
           </ProtectedRoute>
         } />
 
+        <Route path="/admin/borrows" element={
+          <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+            <MainLayout><BorrowManagement /></MainLayout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/student/dashboard" element={
           <ProtectedRoute allowedRoles={["Student"]}>
-            <div style={{ padding: 40, fontSize: 24 }}>
-              📚 Student Dashboard (coming soon)
-            </div>
+            <MainLayout><StudentDashboard /></MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/dashboard" element={
+           <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+            <MainLayout>
+              <div style={{ padding: 40, fontSize: 24 }}>?? Admin Dashboard (coming soon)</div>
+            </MainLayout>
           </ProtectedRoute>
         } />
 
         <Route path="/"      element={<Navigate to="/login" replace />} />
-        <Route path="/admin" element={<Navigate to="/admin/books" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/books" replace />} />        
 
         <Route path="/unauthorized" element={
           <div style={{ padding: 40, textAlign: "center" }}>
-            <h2>🚫 Access Denied</h2>
-            <p>You don't have permission to view this page.</p>
+            <h2>?? Access Denied</h2>
+            <p>You dont have permission to view this page.</p>
           </div>
         } />
 
-       
+
       </Routes>
     </BrowserRouter>
   );

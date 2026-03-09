@@ -19,7 +19,7 @@ export const addBook = createAsyncThunk(
     try {
       const result = await booksService.addBook(book);
       message.success("Book added successfully!");
-      return result;
+      return result.data;
     } catch (err) {
       message.error("Failed to add book");
       return thunkAPI.rejectWithValue(err.message);
@@ -33,7 +33,7 @@ export const updateBookRating = createAsyncThunk(
     try {
       const result = await booksService.updateRating(id, rating);
       message.success("Rating updated!");
-      return result;
+      return result.data;
     } catch (err) {
       message.error("Failed to update rating");
       return thunkAPI.rejectWithValue(err.message);
@@ -68,8 +68,8 @@ const booksSlice = createSlice({
     search: "",
   },
   reducers: {
-    setGenre(state, action)  { state.genre = action.payload; state.currentPage = 1; },
-    setSearch(state, action) { state.search = action.payload; state.currentPage = 1; },
+    setGenre(state, action)  { state.genre = action.payload; state.currentPage = 1; },  
+    setSearch(state, action) { state.search = action.payload; state.currentPage = 1; }, 
     setPage(state, action)   { state.currentPage = action.payload; },
   },
   extraReducers: (builder) => {
@@ -79,18 +79,20 @@ const booksSlice = createSlice({
         state.loading    = false;
         state.books      = payload.data;
         state.total      = payload.total;
-        state.totalPages = payload.totalPages;
+        state.totalPages = payload.lastPage || 1;
       })
       .addCase(fetchBooks.rejected, (state, { payload }) => {
         state.loading = false;
         state.error   = payload;
       })
-      .addCase(addBook.fulfilled, (state) => { state.loading = false; })
+      .addCase(addBook.fulfilled, (state, { payload }) => {
+        state.books.unshift(payload);
+      })
       .addCase(deleteBook.fulfilled, (state, { payload }) => {
-        state.books = state.books.filter((b) => b.id !== payload);
+        state.books = state.books.filter((b) => b._id !== payload);
       })
       .addCase(updateBookRating.fulfilled, (state, { payload }) => {
-        const i = state.books.findIndex((b) => b.id === payload.id);
+        const i = state.books.findIndex((b) => b._id === payload._id);
         if (i !== -1) state.books[i] = payload;
       });
   },

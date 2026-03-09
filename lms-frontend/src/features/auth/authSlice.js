@@ -2,7 +2,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { message } from "antd";
 import authService from "./authService";
-import { clearStorage, getStoredToken, getStoredUser } from "../../utils/tokenUtils";
+import { getStoredToken, getStoredUser } from "../../utils/tokenUtils";
 
 // ── Login ─────────────────────────────────────────────────────────────────
 export const loginUser = createAsyncThunk(
