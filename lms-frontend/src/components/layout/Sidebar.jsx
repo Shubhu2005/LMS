@@ -20,6 +20,12 @@ export default function Sidebar() {
 
   const isAdminOrManager = user?.role === "Admin" || user?.role === "Manager";
 
+  const getPanelLabel = () => {
+    if (user?.role === "Admin") return "Admin Panel";
+    if (user?.role === "Manager") return "Manager Panel";
+    return "Student Portal";
+  };
+
   const navItems = isAdminOrManager 
     ? [
         { label: "Dashboard", icon: <DashboardIcon />, path: "/admin/dashboard" },
@@ -53,10 +59,10 @@ export default function Sidebar() {
     >
       <Box sx={{ p: 3, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <Typography variant="h6" fontWeight={700} color="#fff" fontSize={15}>
-          ?? Library Management
+           Library Management
         </Typography>
-        <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.4)" }}>
-          {isAdminOrManager ? "Staff Panel" : "Student Panel"}
+        <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>
+          {getPanelLabel()}
         </Typography>
       </Box>
 

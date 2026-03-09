@@ -44,6 +44,8 @@ export class BooksController {
   // 🔥 2. GET ALL BOOKS (PUBLIC - Pagination + Search + Genre)
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.STUDENT)
   @ApiOperation({ summary: 'Get all books with pagination and filters' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })

@@ -63,9 +63,9 @@ export class BorrowController {
     return this.borrowService.returnBook(id);
   }
 
-  // 🔥 ADMIN → VIEW ALL
+  // 🔥 MANAGER → VIEW ALL
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.MANAGER, Role.ADMIN)
   getAll() {
     return this.borrowService.getAllBorrows();
   }

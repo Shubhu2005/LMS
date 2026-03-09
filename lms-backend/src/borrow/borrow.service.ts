@@ -96,7 +96,7 @@ export class BorrowService {
 
     return {
       message: 'Book issued successfully',
-      data: borrow,
+      data: await this.borrowModel.findById(borrowId).populate(['user', 'book']),
     };
   }
 
@@ -114,7 +114,7 @@ export class BorrowService {
 
     return {
       message: 'Request declined',
-      data: borrow,
+      data: await this.borrowModel.findById(borrowId).populate(['user', 'book']),
     };
   }
 
@@ -140,7 +140,7 @@ export class BorrowService {
 
     return {
       message: 'Book returned successfully',
-      data: borrow,
+      data: await this.borrowModel.findById(borrowId).populate(['user', 'book']),
     };
   }
 

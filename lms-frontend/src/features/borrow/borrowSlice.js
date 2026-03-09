@@ -56,7 +56,7 @@ export const approveBorrowRequest = createAsyncThunk(
     try {
       const result = await borrowService.approveRequest(id);
       message.success("Request approved!");
-      return result.data;
+      return result.data; 
     } catch (err) {
       message.error("Failed to approve");
       return thunkAPI.rejectWithValue(err.message);
@@ -99,37 +99,57 @@ const borrowSlice = createSlice({
     loading: false,
     error: null,
   },
-  reducers: {},
+  reducers: {
+    clearBorrows: (state) => {
+      state.borrows = [];
+    }
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMyBorrows.pending, (state) => { state.loading = true; })
       .addCase(fetchMyBorrows.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.borrows = payload;
+        state.borrows = Array.isArray(payload) ? payload : [];
       })
       .addCase(fetchAllBorrows.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.borrows = payload;
+        state.borrows = Array.isArray(payload) ? payload : [];
       })
       .addCase(fetchPendingRequests.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.borrows = payload;
+        state.borrows = Array.isArray(payload) ? payload : [];
       })
       .addMatcher(
-        (action) => action.type.endsWith("/fulfilled") && action.type.startsWith("borrow/approve"),
+        (action) => action.type.endsWith("/pending"),
+        (state) => { state.loading = true; }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith("/rejected"),
         (state, { payload }) => {
-           const i = state.borrows.findIndex(b => b._id === payload._id);
-           if(i !== -1) state.borrows[i] = payload;
+          state.loading = false;
+          state.error = payload;
         }
       )
       .addMatcher(
-        (action) => action.type.endsWith("/fulfilled") && (action.type.startsWith("borrow/decline") || action.type.startsWith("borrow/return")),
+        (action) => action.type.endsWith("/fulfilled") && (
+          action.type.startsWith("borrow/approve") ||
+          action.type.startsWith("borrow/decline") ||
+          action.type.startsWith("borrow/return")
+        ),
         (state, { payload }) => {
-           const i = state.borrows.findIndex(b => b._id === payload._id);
-           if(i !== -1) state.borrows[i] = payload;
+           state.loading = false;
+           if (payload && payload._id) {
+             const i = state.borrows.findIndex(b => b._id === payload._id);
+             if (i !== -1) {
+               state.borrows[i] = payload;
+             }
+           }
         }
       );
   },
 });
 
+export const { clearBorrows } = borrowSlice.actions;
 export default borrowSlice.reducer;
+
+
+

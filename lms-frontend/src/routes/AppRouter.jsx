@@ -5,13 +5,14 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import BooksPage    from "../pages/admin/BooksPage";
 import BorrowManagement from "../pages/admin/BorrowManagement";
 import StudentDashboard from "../pages/student/StudentDashboard";
+import AdminDashboard   from "../pages/admin/AdminDashboard";
 import MainLayout   from "../components/layout/MainLayout";
 
 function PublicRoute({ children }) {
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   if (!isAuthenticated) return children;
 
-  if (user?.role === "Admin" || user?.role === "Manager") return <Navigate to="/books" replace />;
+  if (user?.role === "Admin" || user?.role === "Manager") return <Navigate to="/admin/dashboard" replace />;
   if (user?.role === "Student") return <Navigate to="/student/dashboard" replace />;    
   return <Navigate to="/login" replace />;
 }
@@ -35,7 +36,6 @@ export default function AppRouter() {
         <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />   
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-        {/* Books is accessible by EVERYONE (Student, Manager, Admin) */}
         <Route path="/books" element={
           <ProtectedRoute allowedRoles={["Admin", "Manager", "Student"]}>
             <MainLayout><BooksPage /></MainLayout>
@@ -56,14 +56,12 @@ export default function AppRouter() {
 
         <Route path="/admin/dashboard" element={
            <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
-            <MainLayout>
-              <div style={{ padding: 40, fontSize: 24 }}>?? Admin Dashboard (coming soon)</div>
-            </MainLayout>
+            <MainLayout><AdminDashboard /></MainLayout>
           </ProtectedRoute>
         } />
 
         <Route path="/"      element={<Navigate to="/login" replace />} />
-        <Route path="/admin" element={<Navigate to="/books" replace />} />        
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />        
 
         <Route path="/unauthorized" element={
           <div style={{ padding: 40, textAlign: "center" }}>
