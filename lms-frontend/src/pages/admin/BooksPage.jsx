@@ -1,32 +1,32 @@
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box, Button, Card, CardContent, Typography, Grid,
   TextField, MenuItem, Select, FormControl, InputLabel,
   Dialog, DialogTitle, DialogContent, DialogActions,
   Rating, IconButton, Chip, Pagination, CircularProgress,
-  InputAdornment,
-} from "@mui/material";
-import AddIcon        from "@mui/icons-material/Add";
-import DeleteIcon     from "@mui/icons-material/Delete";
-import SearchIcon     from "@mui/icons-material/Search";
-import BookIcon       from "@mui/icons-material/Book";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+  InputAdornment, CardMedia,
+} from '@mui/material';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 import {
   fetchBooks, addBook, deleteBook,
   updateBookRating, setGenre, setSearch, setPage,
-} from "../../features/books/booksSlice";
-import { requestBook, fetchMyBorrows } from "../../features/borrow/borrowSlice";
+} from '../../features/books/booksSlice';
+import { requestBook, fetchMyBorrows } from '../../features/borrow/borrowSlice';
 
-const GENRES = ["All", "Fiction", "Tech", "Sci-Fi", "Biography", "Classic", "Dystopian", "Fantasy", "Education", "Thriller", "Self-Help"];
+const GENRES = ['All', 'Fiction', 'Tech', 'Sci-Fi', 'Biography', 'Classic', 'Dystopian', 'Fantasy', 'Education', 'Thriller', 'Self-Help'];
 
 const GENRE_COLORS = {
-  Fiction:   { bg: "#fef3c7", color: "#92400e" },
-  Tech:      { bg: "#dbeafe", color: "#1e40af" },
-  "Sci-Fi":  { bg: "#f3e8ff", color: "#6b21a8" },
-  Biography: { bg: "#dcfce7", color: "#166534" },
-  Classic:   { bg: "#e0f2fe", color: "#075985" },
-  Education: { bg: "#ede9fe", color: "#5b21b6" },
+  Fiction:   { bg: '#eff6ff', color: '#1e40af' },
+  Tech:      { bg: '#fdf2f8', color: '#9d174d' },
+  'Sci-Fi':  { bg: '#f5f3ff', color: '#5b21b6' },
+  Education: { bg: '#ecfdf5', color: '#065f46' },
+  'Self-Help': { bg: '#fff7ed', color: '#9a3412' },
 };
 
 export default function BooksPage() {
@@ -35,19 +35,17 @@ export default function BooksPage() {
   const { borrows } = useSelector((s) => s.borrow);
   const { user } = useSelector((s) => s.auth);
 
-  const isAdmin   = user?.role === "Admin";
-  const isManager = user?.role === "Manager" || isAdmin;
-  const isStudent = user?.role === "Student";
+  const isAdmin   = user?.role === 'Admin';
+  const isManager = user?.role === 'Manager' || isAdmin;
+  const isStudent = user?.role === 'Student';
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [form, setForm] = useState({ title: "", author: "", genre: "Fiction", rating: 3 });
+  const [searchInput, setSearchInput] = useState('');
+  const [form, setForm] = useState({ title: '', author: '', genre: 'Fiction', rating: 3 });
 
   useEffect(() => {
     dispatch(fetchBooks({ genre, search, page: currentPage, limit: 6 }));
-    if (isStudent) {
-      dispatch(fetchMyBorrows());
-    }
+    if (isStudent) dispatch(fetchMyBorrows());
   }, [dispatch, genre, search, currentPage, isStudent]);
 
   useEffect(() => {
@@ -55,154 +53,87 @@ export default function BooksPage() {
     return () => clearTimeout(timer);
   }, [searchInput, dispatch]);
 
-  const handleAddBook = () => {
-    if (!form.title || !form.author) return;
-    dispatch(addBook(form)).then(() => {
-      setModalOpen(false);
-      setForm({ title: "", author: "", genre: "Fiction", rating: 3 });
-      dispatch(fetchBooks({ genre, search, page: 1, limit: 6 }));
-    });
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm("Delete this book?")) dispatch(deleteBook(id));
-  };
-
-  const handleRating = (id, value) => {
-    dispatch(updateBookRating({ id, rating: value }));
-  };
-
   const handleBorrow = (bookId) => {
-    dispatch(requestBook(bookId)).then(() => {
-        dispatch(fetchMyBorrows()); // Refresh borrow list to update button state
-    });
+    dispatch(requestBook(bookId)).then(() => dispatch(fetchMyBorrows()));
   };
 
-  // Helper to check if book is already requested/issued to this student
   const getBorrowStatus = (bookId) => {
-    const b = borrows.find(b => b.book?._id === bookId && (b.status === "requested" || b.status === "issued"));
+    const b = borrows.find(b => b.book?._id === bookId && (b.status === 'requested' || b.status === 'issued'));
     return b ? b.status : null;
   };
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} flexWrap="wrap" gap={2}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant='h4' fontWeight={800} sx={{ letterSpacing: -1 }}>Books Catalog</Typography>
+          <Typography variant='body2' sx={{ color: '#64748b' }}>Browse and manage the library collection.</Typography>
+        </Box>
+        {isAdmin && (
+          <Button variant='contained' disableElevation startIcon={<AddRoundedIcon />} onClick={() => setModalOpen(true)} sx={{ borderRadius: '12px', py: 1.2, px: 3, textTransform: 'none', fontWeight: 700 }}>Add New Volume</Button>
+        )}
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
         <TextField
-          placeholder="Search by title or author..."
-          size="small"
+          placeholder='Search library...'
+          size='small'
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ width: 280 }}
-          InputProps={{
-            startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" color="action" /></InputAdornment>,
-          }}
+          sx={{ width: 320, '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' } }}
+          InputProps={{ startAdornment: <InputAdornment position='start'><SearchRoundedIcon sx={{ color: '#94a3b8' }} /></InputAdornment> }}
         />
-
-        <Box display="flex" alignItems="center" gap={2}>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Genre</InputLabel>
-            <Select
-              value={genre}
-              label="Genre"
-              onChange={(e) => dispatch(setGenre(e.target.value))}
-            >
-              {GENRES.map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
-            </Select>
-          </FormControl>
-
-          {isAdmin && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setModalOpen(true)}
-              sx={{ backgroundColor: "#6366f1", "&:hover": { backgroundColor: "#4f46e5" }, borderRadius: 2 }}
-            >
-              Add Book
-            </Button>
-          )}
-        </Box>
+        <FormControl size='small' sx={{ minWidth: 160 }}>
+          <InputLabel><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><FilterListRoundedIcon fontSize='small' /> Genre</Box></InputLabel>
+          <Select value={genre} label='Genre' onChange={(e) => dispatch(setGenre(e.target.value))} sx={{ borderRadius: '12px', bgcolor: '#fff' }}>
+            {GENRES.map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
+          </Select>
+        </FormControl>
       </Box>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" mt={8}>
-          <CircularProgress sx={{ color: "#6366f1" }} />
-        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress size={32} thickness={5} sx={{ color: '#6366f1' }} /></Box>
       ) : (
-        <Grid container spacing={2.5}>
+        <Grid container spacing={3}>
           {books.map((book) => {
             const status = getBorrowStatus(book._id);
             return (
               <Grid item xs={12} sm={6} md={4} key={book._id}>
-                <Card
-                  elevation={0}
-                  sx={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 3,
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "box-shadow 0.2s",
-                    "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.08)" },
-                  }}
-                >
-                  <CardContent sx={{ p: 3, flexGrow: 1 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                      <Chip
-                        label={book.genre}
-                        size="small"
-                        sx={{
-                          backgroundColor: GENRE_COLORS[book.genre]?.bg || "#f3f4f6",
-                          color: GENRE_COLORS[book.genre]?.color || "#374151",
-                          fontWeight: 600,
-                          fontSize: 11,
-                        }}
-                      />
+                <Card elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: '24px', border: '1px solid #e2e8f0', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', '&:hover': { transform: 'translateY(-5px)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.05)' } }}>
+                  <Box sx={{ p: 3, flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Chip label={book.genre} size='small' sx={{ fontWeight: 700, fontSize: 10, bgcolor: GENRE_COLORS[book.genre]?.bg || '#f1f5f9', color: GENRE_COLORS[book.genre]?.color || '#475569' }} />
                       {isAdmin && (
-                        <IconButton size="small" onClick={() => handleDelete(book._id)} sx={{ color: "#ef4444", "&:hover": { backgroundColor: "#fef2f2" } }}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <IconButton size='small' onClick={() => window.confirm('Delete?') && dispatch(deleteBook(book._id))} sx={{ color: '#94a3b8', '&:hover': { color: '#f43f5e', bgcolor: '#fff1f2' } }}><DeleteOutlineRoundedIcon fontSize='small' /></IconButton>
                       )}
                     </Box>
-
-                    <Typography variant="h6" fontWeight={700} fontSize={15} color="#111827" mb={0.5} noWrap>
-                      {book.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" mb={2}>
-                      by {book.author}
-                    </Typography>
-
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <Rating
-                        value={book.rating}
-                        onChange={(_, val) => isManager && handleRating(book._id, val)}
-                        readOnly={!isManager}
-                        size="small"
-                        sx={{ color: "#f59e0b" }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        ({book.rating}/5)
-                      </Typography>
+                    <Typography variant='h6' fontWeight={800} sx={{ lineHeight: 1.3, mb: 1, color: '#0f172a' }}>{book.title}</Typography>
+                    <Typography variant='body2' sx={{ color: '#64748b', mb: 3 }}>by <span style={{ fontWeight: 600, color: '#334155' }}>{book.author}</span></Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Rating value={book.rating} readOnly={!isManager} onChange={(_, v) => isManager && dispatch(updateBookRating({ id: book._id, rating: v }))} size='small' sx={{ color: '#f59e0b' }} />
+                      <Typography variant='caption' fontWeight={700} sx={{ color: '#94a3b8' }}>{book.rating}</Typography>
                     </Box>
-
+                  </Box>
+                  <Box sx={{ p: 2, pt: 0 }}>
                     {isStudent && (
                       <Button
                         fullWidth
-                        variant={status ? "contained" : "outlined"}
-                        startIcon={status ? <CheckCircleIcon /> : <BookIcon />}
+                        disableElevation
+                        variant={status ? 'contained' : 'outlined'}
+                        startIcon={status ? <CheckCircleRoundedIcon /> : <AutoStoriesRoundedIcon />}
                         disabled={!!status || !book.isAvailable}
                         onClick={() => handleBorrow(book._id)}
                         sx={{ 
-                            mt: "auto", borderRadius: 2, textTransform: "none", fontWeight: 600,
-                            ...(status === "requested" && { bgcolor: "#fef3c7 !important", color: "#92400e !important" }),
-                            ...(status === "issued" && { bgcolor: "#dcfce7 !important", color: "#166534 !important" }),
+                          borderRadius: '14px', py: 1.2, textTransform: 'none', fontWeight: 700,
+                          ...(status === 'requested' && { bgcolor: '#fef3c7 !important', color: '#92400e !important', border: 'none' }),
+                          ...(status === 'issued' && { bgcolor: '#dcfce7 !important', color: '#166534 !important', border: 'none' }),
                         }}
                       >
-                        {status === "requested" ? "Requested" : 
-                         status === "issued" ? "Borrowed" : 
-                         book.isAvailable ? "Request Borrow" : "Not Available"}
+                        {status === 'requested' ? 'Pending' : status === 'issued' ? 'Issued' : book.isAvailable ? 'Request' : 'Unavailable'}
                       </Button>
                     )}
-                  </CardContent>
+                  </Box>
                 </Card>
               </Grid>
             );
@@ -211,31 +142,23 @@ export default function BooksPage() {
       )}
 
       {totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, val) => dispatch(setPage(val))}
-            color="primary"
-            shape="rounded"
-          />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+          <Pagination count={totalPages} page={currentPage} onChange={(_, v) => dispatch(setPage(v))} sx={{ '& .MuiPaginationItem-root': { borderRadius: '10px', fontWeight: 700 } }} />
         </Box>
       )}
 
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle fontWeight={700}>Add New Book</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Box display="grid" gap={2.5} mt={1}>
-            <TextField label="Title" fullWidth value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            <TextField label="Author" fullWidth value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} />
-            <TextField select label="Genre" fullWidth value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })}>
-              {GENRES.filter((g) => g !== "All").map((g) => (<MenuItem key={g} value={g}>{g}</MenuItem>))}
-            </TextField>
-          </Box>
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} PaperProps={{ sx: { borderRadius: '28px', p: 1 } }}>
+        <DialogTitle sx={{ fontWeight: 800 }}>Add New Book</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: 2, minWidth: 400 }}>
+          <TextField label='Book Title' fullWidth value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
+          <TextField label='Author Name' fullWidth value={form.author} onChange={(e) => setForm({...form, author: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
+          <TextField select label='Genre' fullWidth value={form.genre} onChange={(e) => setForm({...form, genre: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}>
+            {GENRES.filter(g => g !== 'All').map(g => <MenuItem key={g} value={g}>{g}</MenuItem>)}
+          </TextField>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1 }}>
-          <Button onClick={() => setModalOpen(false)} color="inherit">Cancel</Button>
-          <Button variant="contained" onClick={handleAddBook} sx={{ backgroundColor: "#6366f1", "&:hover": { backgroundColor: "#4f46e5" } }}>Add Book</Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setModalOpen(false)} sx={{ fontWeight: 700, color: '#64748b' }}>Cancel</Button>
+          <Button variant='contained' disableElevation onClick={() => dispatch(addBook(form)).then(() => { setModalOpen(false); dispatch(fetchBooks({ genre, search, page: 1 })); })} sx={{ borderRadius: '12px', px: 4, fontWeight: 700 }}>Catalog</Button>
         </DialogActions>
       </Dialog>
     </Box>
